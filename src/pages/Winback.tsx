@@ -26,6 +26,27 @@ export default function Winback() {
   useEffect(() => {
     if (!tenantId) return
     void (async () => {
+      // Auto-flip active customers based on days since last service:
+      //   90+ days  → due_for_service
+      //   180+ days → win_back
+      const daysAgo = (d: number) =>
+        new Date(Date.now() - d * 86400000).toISOString().slice(0, 10)
+
+      await Promise.all([
+        supabase
+          .from('customers')
+          .update({ status: 'win_back' })
+          .eq('tenant_id', tenantId)
+          .eq('status', 'due_for_service')
+          .lt('last_service_date', daysAgo(180)),
+        supabase
+          .from('customers')
+          .update({ status: 'due_for_service' })
+          .eq('tenant_id', tenantId)
+          .eq('status', 'active')
+          .lt('last_service_date', daysAgo(90)),
+      ])
+
       const { data, error } = await supabase
         .from('customers')
         .select('*')
