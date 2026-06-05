@@ -11,8 +11,8 @@ const today = () => new Date().toISOString().slice(0, 10)
 function draftMessage(c: Customer): string {
   const first = (c.contact_name ?? c.name).split(' ')[0]
   return c.status === 'win_back'
-    ? `Hi ${first}, it's Mark at Pro Piper Consulting. I wanted to reach out — it's been a while since we last connected and I'd love to catch up on how things are going with your business. I have some availability coming up and thought this could be a good time to reconnect. Let me know if you'd like to find 20–30 minutes — happy to work around your schedule.`
-    : `Hi ${first}, Mark at Pro Piper Consulting here. I wanted to touch base — based on our last engagement, now is a good time for a check-in to make sure everything is running smoothly and discuss what the next few months look like for your business. Would you be open to a quick call this month? Just reply and we'll find a time that works.`
+    ? `Hi ${first}, it's Mark at Pro Piper Consulting. I was thinking about you and wanted to reach out — it's been a while since we last spoke and I'd love to hear how the business is doing. I have some time opening up and thought a quick catch-up could be valuable. Are you open to 20 minutes in the next couple of weeks?`
+    : `Hi ${first}, Mark at Pro Piper Consulting here. I was reviewing my client calendar and wanted to proactively reach out — it's about time for us to connect, make sure everything is on track, and talk through what the next few months look like for you. I have availability this month if you'd like to find a time.`
 }
 
 export default function Winback() {
