@@ -7,6 +7,8 @@ const nav = [
   { to: '/customers', label: 'Customers' },
   { to: '/winback',   label: 'Win-back' },
   { to: '/jobs',      label: 'Jobs & Quotes' },
+  { to: '/settings',  label: 'Settings' },
+  { to: '/guide',     label: 'Help & Guide' },
 ]
 
 export default function Layout() {

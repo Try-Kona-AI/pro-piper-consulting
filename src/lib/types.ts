@@ -44,3 +44,17 @@ export interface Job {
   created_at: string
   customer?: Pick<Customer, 'id' | 'name'>
 }
+
+export interface TenantSettings {
+  id: string
+  tenant_id: string
+  zelle_contact: string | null
+  bank_name: string | null
+  bank_routing: string | null
+  bank_account: string | null
+  mailing_name: string | null
+  mailing_address: string | null
+  contact_phone: string | null
+  other_instructions: string | null
+  updated_at: string
+}

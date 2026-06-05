@@ -7,6 +7,8 @@ import Invoices from './pages/Invoices'
 import Customers from './pages/Customers'
 import Winback from './pages/Winback'
 import Jobs from './pages/Jobs'
+import Settings from './pages/Settings'
+import Guide from './pages/Guide'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="customers" element={<Customers />} />
         <Route path="winback"   element={<Winback />} />
         <Route path="jobs"      element={<Jobs />} />
+        <Route path="settings"  element={<Settings />} />
+        <Route path="guide"     element={<Guide />} />
       </Route>
     </Routes>
   )
