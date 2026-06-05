@@ -93,12 +93,12 @@ export default function Dashboard() {
             {outstandingSorted.length === 0
               ? <div className="px-5 py-8 text-center text-sm text-slate-400">All invoices are paid — nice work!</div>
               : outstandingSorted.map(inv => (
-              <div key={inv.id} className="flex items-center justify-between px-5 py-3">
-                <div>
+              <div key={inv.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                <div className="min-w-0">
                   <div className="text-sm font-medium text-slate-800">{inv.customer?.name}</div>
                   <div className="text-xs text-slate-400">{inv.number} · {inv.description}</div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex shrink-0 items-center gap-3">
                   <div className="text-right">
                     <div className="text-sm font-medium text-slate-800">{money(inv.amount)}</div>
                     <div className="text-xs text-slate-400">
