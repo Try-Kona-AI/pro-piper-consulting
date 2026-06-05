@@ -137,7 +137,6 @@ export default function Invoices() {
                             size="sm"
                             onClick={() => void sendInvoice(inv)}
                             disabled={busy === inv.id || emailStatus[inv.id] === 'sending' || !inv.customer?.email}
-                            title={!inv.customer?.email ? 'Add customer email first' : undefined}
                           >
                             {emailStatus[inv.id] === 'sending' ? 'Sending…' : emailStatus[inv.id] === 'sent' ? '✓ Sent' : 'Send invoice'}
                           </Button>
