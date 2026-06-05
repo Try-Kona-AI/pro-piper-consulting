@@ -96,7 +96,7 @@ export default function Guide() {
   return (
     <>
       <PageHeader
-        title="How to use Pro Piper"
+        title="How to use Pro Piper Consulting"
         subtitle="A simple guide — no tech knowledge needed."
       />
 

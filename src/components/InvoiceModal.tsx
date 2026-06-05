@@ -79,7 +79,7 @@ export default function InvoiceModal({ onClose, onSaved, invoice }: Props) {
           <option value="">Select a customer…</option>
           {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </SelectField>
-        <TextAreaField label="Description" value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Water heater replacement, unit 4B" />
+        <TextAreaField label="Description" value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Q3 strategy session, business operations review" />
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Amount ($)" type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="0.00" />
           <TextField label="Due date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />

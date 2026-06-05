@@ -49,7 +49,7 @@ export default function CustomerModal({ onClose, onSaved, customer }: Props) {
         <TextField label="Business / customer name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Marcado Property Group" />
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Contact name" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Lisa Marcado" />
-          <TextField label="Phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="718-555-0100" />
+          <TextField label="Phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="212-555-0100" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="lisa@example.com" />
@@ -59,7 +59,7 @@ export default function CustomerModal({ onClose, onSaved, customer }: Props) {
             <option value="win_back">Win-back</option>
           </SelectField>
         </div>
-        <TextField label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="225-11 145th Ave, Queens, NY 11413" />
+        <TextField label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="100 Church St, New York, NY 10007" />
         <TextAreaField label="Notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any context about this customer…" />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <FormActions onCancel={onClose} saving={saving} label={customer ? 'Save changes' : 'Add customer'} />

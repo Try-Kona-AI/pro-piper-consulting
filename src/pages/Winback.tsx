@@ -11,8 +11,8 @@ const today = () => new Date().toISOString().slice(0, 10)
 function draftMessage(c: Customer): string {
   const first = (c.contact_name ?? c.name).split(' ')[0]
   return c.status === 'win_back'
-    ? `Hi ${first}, it's Mike at Pro Piper Plumbing. It's been a while — want me to swing by for a quick check-up before anything turns into an emergency? Reply and I'll find a slot.`
-    : `Hi ${first}, Mike at Pro Piper here. You're about due for your routine service. Want me to get you on the schedule this month?`
+    ? `Hi ${first}, it's Mark at Pro Piper Consulting. It's been a while — want to reconnect and see where things stand? Reply and we'll find a time.`
+    : `Hi ${first}, Mark at Pro Piper Consulting here. You're about due for your next check-in. Want me to get you on the schedule this month?`
 }
 
 export default function Winback() {

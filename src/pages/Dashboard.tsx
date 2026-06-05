@@ -71,7 +71,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Good morning, Mike" subtitle="Here's what's happening with your money today." />
+      <PageHeader title="Good morning, Mark" subtitle="Here's what's happening with your money today." />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Money owed to you" value={money(owed)} sub={`${outstanding.length} open invoices`} />

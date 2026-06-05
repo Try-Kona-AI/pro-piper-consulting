@@ -64,7 +64,7 @@ export default function JobModal({ onClose, onSaved, job }: Props) {
           <option value="">Select a customer…</option>
           {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </SelectField>
-        <TextField label="Title" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Replace water heater, boiler room B" />
+        <TextField label="Title" value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. Q4 operations audit, growth strategy session" />
         <TextAreaField label="Description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Scope of work…" />
         <div className="grid grid-cols-2 gap-3">
           <SelectField label="Status" value={status} onChange={e => setStatus(e.target.value as Job['status'])}>

@@ -168,7 +168,7 @@ export default function Settings() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Zelle</h2>
             <TextField
               label="Zelle email or phone"
-              placeholder="mike@propiperplumbing.com"
+              placeholder="mark@propiperconsulting.com"
               value={draft.zelle_contact ?? ''}
               onChange={set('zelle_contact')}
             />
@@ -202,13 +202,13 @@ export default function Settings() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Check by Mail</h2>
             <TextField
               label="Payable to (business name)"
-              placeholder="Pro Piper Plumbing LLC"
+              placeholder="Pro Piper Consulting LLC"
               value={draft.mailing_name ?? ''}
               onChange={set('mailing_name')}
             />
             <TextAreaField
               label="Mailing address"
-              placeholder={"225-11 145th Ave\nSpringfield Gardens, NY 11413"}
+              placeholder={"100 Church St\nNew York, NY 10007"}
               value={draft.mailing_address ?? ''}
               onChange={set('mailing_address')}
             />
@@ -219,7 +219,7 @@ export default function Settings() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Other</h2>
             <TextField
               label="Contact phone (for payment questions)"
-              placeholder="718-555-0100"
+              placeholder="212-555-0100"
               value={draft.contact_phone ?? ''}
               onChange={set('contact_phone')}
             />
@@ -248,7 +248,7 @@ export default function Settings() {
             <div className="mb-4 border-b border-slate-100 pb-4">
               <p className="text-xs text-slate-400">Invoice #2026-0012 · Due Jun 15, 2026</p>
               <p className="mt-1 text-sm text-slate-600">
-                Hi John — just a reminder that invoice #2026-0012 for $450.00 is due in 5 days.
+                Hi John — just a reminder that invoice #2026-0012 for $2,500.00 is due in 5 days.
               </p>
             </div>
             <PaymentPreview d={draft} />

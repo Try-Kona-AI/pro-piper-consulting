@@ -55,8 +55,8 @@ function Logo() {
         <defs><linearGradient id="sl" x1="1" y1="1" x2="33" y2="33" gradientUnits="userSpaceOnUse"><stop stopColor="#0a86e6"/><stop offset="1" stopColor="#005aa6"/></linearGradient></defs>
       </svg>
       <div className="leading-tight">
-        <div className="text-sm font-semibold text-white">Pro Piper</div>
-        <div className="text-[11px] text-slate-400">Plumbing · Queens, NY</div>
+        <div className="text-sm font-semibold text-white">Pro Piper Consulting</div>
+        <div className="text-[11px] text-slate-400">Business Consulting · New York, NY</div>
       </div>
     </div>
   )
@@ -123,7 +123,7 @@ export default function Layout() {
           <circle cx="23.6" cy="11" r="1.9" fill="#f5b91e"/>
           <defs><linearGradient id="sl2" x1="1" y1="1" x2="33" y2="33" gradientUnits="userSpaceOnUse"><stop stopColor="#0a86e6"/><stop offset="1" stopColor="#005aa6"/></linearGradient></defs>
         </svg>
-        <span className="text-sm font-semibold text-white">Pro Piper</span>
+        <span className="text-sm font-semibold text-white">Pro Piper Consulting</span>
       </header>
 
       {/* ── Drawer backdrop (mobile only) ──────────────────── */}

@@ -41,7 +41,7 @@ export default function Login() {
             <defs><linearGradient id="lg" x1="1" y1="1" x2="33" y2="33" gradientUnits="userSpaceOnUse"><stop stopColor="#0a86e6"/><stop offset="1" stopColor="#005aa6"/></linearGradient></defs>
           </svg>
           <span style={{ color: '#fff', fontFamily: 'Inter, sans-serif', fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em' }}>
-            Pro Piper <span style={{ color: '#f5b91e' }}>·</span>
+            Pro Piper Consulting <span style={{ color: '#f5b91e' }}>·</span>
           </span>
         </div>
 
@@ -51,7 +51,7 @@ export default function Login() {
             {mode === 'signin' ? 'Sign in' : 'Create account'}
           </h1>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#697384', marginBottom: 24 }}>
-            {mode === 'signin' ? 'Welcome back.' : 'Get started with Pro Piper.'}
+            {mode === 'signin' ? 'Welcome back.' : 'Get started with Pro Piper Consulting.'}
           </p>
 
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
