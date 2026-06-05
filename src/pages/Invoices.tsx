@@ -5,6 +5,7 @@ import type { Invoice } from '../lib/types'
 import { money, shortDate } from '../lib/format'
 import { Card, Badge, Button, PageHeader, Loading, ErrorNote, EmptyState } from '../components/ui'
 import InvoiceModal from '../components/InvoiceModal'
+import { sendEmail } from '../lib/email'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -15,6 +16,7 @@ export default function Invoices() {
   const [error, setError]       = useState<string | null>(null)
   const [busy, setBusy]         = useState<string | null>(null)
   const [modal, setModal]       = useState<'new' | Invoice | null>(null)
+  const [emailStatus, setEmailStatus] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
 
   async function load() {
     if (!tenantId) return
@@ -40,8 +42,22 @@ export default function Invoices() {
 
   async function sendReminder(inv: Invoice) {
     setBusy(inv.id)
-    await supabase.from('invoices').update({ last_reminder_date: today(), reminder_count: inv.reminder_count + 1 }).eq('id', inv.id)
+    setEmailStatus(s => ({ ...s, [inv.id]: 'sending' }))
+    const result = await sendEmail({ type: 'invoice_reminder', tenantId: tenantId!, invoiceId: inv.id })
+    if (result.ok) {
+      setEmailStatus(s => ({ ...s, [inv.id]: 'sent' }))
+    } else {
+      setEmailStatus(s => ({ ...s, [inv.id]: 'error' }))
+      alert(`Email failed: ${result.error}`)
+    }
     await load()
+    setBusy(null)
+  }
+
+  async function sendReceipt(inv: Invoice) {
+    setBusy(inv.id + '_receipt')
+    const result = await sendEmail({ type: 'invoice_receipt', tenantId: tenantId!, invoiceId: inv.id })
+    if (!result.ok) alert(`Email failed: ${result.error}`)
     setBusy(null)
   }
 
@@ -103,9 +119,18 @@ export default function Invoices() {
                       <div className="flex justify-end gap-1.5">
                         {inv.status !== 'paid' && (
                           <>
-                            <Button size="sm" variant="secondary" onClick={() => void sendReminder(inv)} disabled={busy === inv.id}>Remind</Button>
+                            <Button
+                              size="sm" variant="secondary"
+                              onClick={() => void sendReminder(inv)}
+                              disabled={busy === inv.id || emailStatus[inv.id] === 'sending'}
+                            >
+                              {emailStatus[inv.id] === 'sending' ? 'Sending…' : emailStatus[inv.id] === 'sent' ? '✓ Sent' : 'Remind'}
+                            </Button>
                             <Button size="sm" onClick={() => void markPaid(inv)} disabled={busy === inv.id}>Paid ✓</Button>
                           </>
+                        )}
+                        {inv.status === 'paid' && (
+                          <Button size="sm" variant="secondary" onClick={() => void sendReceipt(inv)} disabled={busy === inv.id + '_receipt'}>Receipt</Button>
                         )}
                         <Button size="sm" variant="secondary" onClick={() => setModal(inv)}>Edit</Button>
                         <button

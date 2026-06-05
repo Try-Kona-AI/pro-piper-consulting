@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth'
 import type { Customer } from '../lib/types'
 import { shortDate } from '../lib/format'
 import { Card, Badge, Button, PageHeader, Loading, ErrorNote, EmptyState } from '../components/ui'
+import { sendEmail } from '../lib/email'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -19,7 +20,7 @@ export default function Winback() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
-  const [sent, setSent]           = useState<Record<string, boolean>>({})
+  const [status, setStatus]       = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
   const [busy, setBusy]           = useState<string | null>(null)
 
   useEffect(() => {
@@ -39,8 +40,18 @@ export default function Winback() {
 
   async function reengage(c: Customer) {
     setBusy(c.id)
-    await supabase.from('customers').update({ status: 'active', last_service_date: today() }).eq('id', c.id)
-    setSent(s => ({ ...s, [c.id]: true }))
+    setStatus(s => ({ ...s, [c.id]: 'sending' }))
+
+    const result = await sendEmail({ type: 'win_back', tenantId: tenantId!, customerId: c.id })
+
+    if (result.ok) {
+      // Mark as active in DB
+      await supabase.from('customers').update({ status: 'active', last_service_date: today() }).eq('id', c.id)
+      setStatus(s => ({ ...s, [c.id]: 'sent' }))
+    } else {
+      setStatus(s => ({ ...s, [c.id]: 'error' }))
+      alert(`Email failed: ${result.error}`)
+    }
     setBusy(null)
   }
 
@@ -60,16 +71,29 @@ export default function Winback() {
                 <div>
                   <div className="font-medium text-slate-800">{c.name}</div>
                   <div className="text-xs text-slate-400">Last service {shortDate(c.last_service_date)}</div>
+                  {!c.email && (
+                    <div className="mt-1 text-xs text-amber-600">⚠ No email — add one in Customers to send</div>
+                  )}
                 </div>
                 <Badge status={c.status} kind="customer" />
               </div>
               <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600 ring-1 ring-inset ring-slate-200">
                 {draftMessage(c)}
               </div>
-              <div className="mt-3 flex justify-end">
-                {sent[c.id]
-                  ? <span className="text-sm font-medium text-emerald-600">Re-engagement sent ✓</span>
-                  : <Button size="sm" onClick={() => void reengage(c)} disabled={busy === c.id}>Send re-engagement</Button>}
+              <div className="mt-3 flex items-center justify-end gap-3">
+                {status[c.id] === 'sent' ? (
+                  <span className="text-sm font-medium text-emerald-600">Email sent ✓</span>
+                ) : status[c.id] === 'error' ? (
+                  <span className="text-sm text-red-600">Failed — check email address</span>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => void reengage(c)}
+                    disabled={busy === c.id || !c.email}
+                  >
+                    {busy === c.id ? 'Sending…' : 'Send re-engagement'}
+                  </Button>
+                )}
               </div>
             </Card>
           ))}

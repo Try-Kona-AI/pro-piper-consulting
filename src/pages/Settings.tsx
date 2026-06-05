@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import type { TenantSettings } from '../lib/types'
 import { Card, Button, PageHeader, Loading, ErrorNote, TextField, TextAreaField } from '../components/ui'
+import { sendEmail } from '../lib/email'
+import type { EmailType } from '../lib/email'
 
 type Draft = Omit<TenantSettings, 'id' | 'tenant_id' | 'updated_at'>
 
@@ -253,6 +255,135 @@ export default function Settings() {
           </Card>
         </div>
       </div>
+
+      {/* ---- Test email panel ---- */}
+      <TestEmailPanel tenantId={tenantId} />
     </>
+  )
+}
+
+// ── Test Email Panel ─────────────────────────────────────────────────────────
+
+const TEST_TYPES: { type: EmailType; label: string; needs: 'invoice' | 'customer' | 'job' }[] = [
+  { type: 'invoice_reminder', label: 'Invoice reminder',     needs: 'invoice' },
+  { type: 'invoice_receipt',  label: 'Invoice receipt',      needs: 'invoice' },
+  { type: 'follow_up',        label: 'Follow-up (Day 7)',    needs: 'invoice' },
+  { type: 'win_back',         label: 'Win-back message',     needs: 'customer' },
+  { type: 'quote',            label: 'Quote / Proposal',     needs: 'job' },
+]
+
+function TestEmailPanel({ tenantId }: { tenantId: string | null }) {
+  const [testEmail, setTestEmail] = useState('mjkohn12@yahoo.com')
+  const [sending, setSending]     = useState<EmailType | null>(null)
+  const [results, setResults]     = useState<Record<string, { ok: boolean; msg: string }>>({})
+
+  async function runTest(entry: typeof TEST_TYPES[0]) {
+    if (!tenantId) return
+    setSending(entry.type)
+
+    try {
+      // Find the first available record of the right type
+      let ids: { invoiceId?: string; customerId?: string; jobId?: string } = {}
+
+      if (entry.needs === 'invoice') {
+        const { data } = await supabase.from('invoices').select('id').eq('tenant_id', tenantId).limit(1)
+        if (!data?.length) throw new Error('No invoices found — create one first')
+        ids = { invoiceId: data[0].id }
+      } else if (entry.needs === 'customer') {
+        const { data } = await supabase.from('customers').select('id').eq('tenant_id', tenantId).limit(1)
+        if (!data?.length) throw new Error('No customers found — add one first')
+        ids = { customerId: data[0].id }
+      } else {
+        const { data } = await supabase.from('jobs').select('id').eq('tenant_id', tenantId).limit(1)
+        if (!data?.length) throw new Error('No jobs found — add one first')
+        ids = { jobId: data[0].id }
+      }
+
+      const result = await sendEmail({
+        type: entry.type,
+        tenantId,
+        recipientEmail: testEmail,
+        day: 7,
+        ...ids,
+      })
+
+      setResults(r => ({
+        ...r,
+        [entry.type]: result.ok
+          ? { ok: true, msg: `Sent to ${testEmail}` }
+          : { ok: false, msg: result.error ?? 'Unknown error' },
+      }))
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setResults(r => ({ ...r, [entry.type]: { ok: false, msg } }))
+    }
+
+    setSending(null)
+  }
+
+  return (
+    <div className="mt-10">
+      <h2 className="mb-1 text-lg font-semibold text-slate-900">Test emails</h2>
+      <p className="mb-4 text-sm text-slate-500">
+        Send a real test email of each type to any address. Uses live data from your account.
+        Requires a Resend API key to be set (see setup instructions below).
+      </p>
+
+      <Card className="p-5">
+        <div className="mb-5">
+          <label className="mb-1 block text-sm font-medium text-slate-700">Send test to</label>
+          <input
+            type="email"
+            value={testEmail}
+            onChange={e => setTestEmail(e.target.value)}
+            className="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+
+        <div className="space-y-3">
+          {TEST_TYPES.map(entry => {
+            const res = results[entry.type]
+            return (
+              <div key={entry.type} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-800">{entry.label}</div>
+                  {res && (
+                    <div className={`mt-0.5 text-xs ${res.ok ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {res.ok ? '✓ ' : '✗ '}{res.msg}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void runTest(entry)}
+                  disabled={sending === entry.type || !testEmail}
+                >
+                  {sending === entry.type ? 'Sending…' : 'Send test'}
+                </Button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Setup note */}
+        <div className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
+          <p className="font-medium">Setup required — Resend API key</p>
+          <p className="mt-1">
+            Go to{' '}
+            <a href="https://resend.com" target="_blank" rel="noreferrer" className="underline">resend.com</a>
+            {' '}→ Sign up → API Keys → Create key. Then add it in{' '}
+            <a
+              href="https://supabase.com/dashboard/project/iswutjgctsilblzfjhbg/settings/vault"
+              target="_blank" rel="noreferrer"
+              className="underline"
+            >
+              Supabase Vault
+            </a>
+            {' '}as <code className="rounded bg-amber-100 px-1 font-mono text-xs">RESEND_API_KEY</code>.
+          </p>
+        </div>
+      </Card>
+    </div>
   )
 }

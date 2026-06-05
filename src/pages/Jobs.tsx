@@ -5,6 +5,7 @@ import type { Job } from '../lib/types'
 import { money, shortDate } from '../lib/format'
 import { Card, Badge, Button, PageHeader, Loading, ErrorNote, EmptyState } from '../components/ui'
 import JobModal from '../components/JobModal'
+import { sendEmail } from '../lib/email'
 
 export default function Jobs() {
   const { tenantId } = useAuth()
@@ -13,6 +14,7 @@ export default function Jobs() {
   const [error, setError]     = useState<string | null>(null)
   const [modal, setModal]     = useState<'new' | Job | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [quoteStatus, setQuoteStatus] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
 
   async function load() {
     if (!tenantId) return
@@ -28,6 +30,13 @@ export default function Jobs() {
   }
 
   useEffect(() => { void load() }, [tenantId])
+
+  async function sendQuote(j: Job) {
+    setQuoteStatus(s => ({ ...s, [j.id]: 'sending' }))
+    const result = await sendEmail({ type: 'quote', tenantId: tenantId!, jobId: j.id })
+    setQuoteStatus(s => ({ ...s, [j.id]: result.ok ? 'sent' : 'error' }))
+    if (!result.ok) alert(`Email failed: ${result.error}`)
+  }
 
   async function deleteJob(j: Job) {
     if (!confirm(`Delete "${j.title}"?`)) return
@@ -72,11 +81,22 @@ export default function Jobs() {
                 <Badge status={j.status} kind="job" />
               </div>
               {j.description && <p className="mt-2 text-sm text-slate-600">{j.description}</p>}
-              <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
                 <span className="text-lg font-semibold text-slate-800">{money(j.amount)}</span>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {j.scheduled_date && (
                     <span className="text-xs text-slate-500">Scheduled {shortDate(j.scheduled_date)}</span>
+                  )}
+                  {j.status === 'quote' && (
+                    quoteStatus[j.id] === 'sent'
+                      ? <span className="text-xs font-medium text-emerald-600">Quote sent ✓</span>
+                      : <Button
+                          size="sm" variant="secondary"
+                          onClick={() => void sendQuote(j)}
+                          disabled={quoteStatus[j.id] === 'sending'}
+                        >
+                          {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
+                        </Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setModal(j)}>Edit</Button>
                   <button
