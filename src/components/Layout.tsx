@@ -7,8 +7,11 @@ const nav = [
   { to: '/customers', label: 'Customers' },
   { to: '/winback',   label: 'Win-back' },
   { to: '/jobs',      label: 'Jobs & Quotes' },
-  { to: '/settings',  label: 'Settings' },
+]
+
+const bottomNav = [
   { to: '/guide',     label: 'Help & Guide' },
+  { to: '/settings',  label: 'Settings' },
 ]
 
 export default function Layout() {
@@ -47,15 +50,29 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* User + logout */}
-        <div className="mt-auto border-t border-white/10 px-4 py-4">
-          <div className="mb-2 truncate text-[11px] text-slate-400">{user?.email}</div>
-          <button
-            onClick={() => void signOut()}
-            className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            Sign out
-          </button>
+        {/* Bottom nav + user + logout */}
+        <div className="mt-auto border-t border-white/10 px-3 pt-3 pb-4">
+          {bottomNav.map((n) => (
+            <NavLink
+              key={n.to} to={n.to}
+              className={({ isActive }) =>
+                `block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive ? 'bg-white/15 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`
+              }
+            >
+              {n.label}
+            </NavLink>
+          ))}
+          <div className="mt-3 border-t border-white/10 pt-3">
+            <div className="mb-1 truncate px-3 text-[11px] text-slate-500">{user?.email}</div>
+            <button
+              onClick={() => void signOut()}
+              className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
 
