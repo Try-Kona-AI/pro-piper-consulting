@@ -35,7 +35,7 @@ export default function InvoiceModal({ onClose, onSaved, invoice }: Props) {
   const [description, setDescription] = useState(invoice?.description ?? '')
   const [amount, setAmount]         = useState(invoice?.amount?.toString() ?? '')
   const [dueDate, setDueDate]       = useState(invoice?.due_date ?? defaultDue())
-  const [status, setStatus]         = useState<Invoice['status']>(invoice?.status ?? 'sent')
+  const [status, setStatus]         = useState<Invoice['status']>(invoice?.status ?? 'draft')
 
   useEffect(() => {
     if (!tenantId) return
@@ -85,6 +85,7 @@ export default function InvoiceModal({ onClose, onSaved, invoice }: Props) {
           <TextField label="Due date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </div>
         <SelectField label="Status" value={status} onChange={e => setStatus(e.target.value as Invoice['status'])}>
+          <option value="draft">Draft</option>
           <option value="sent">Sent</option>
           <option value="overdue">Overdue</option>
           <option value="paid">Paid</option>

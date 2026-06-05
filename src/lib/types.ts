@@ -1,5 +1,5 @@
 export type CustomerStatus = 'active' | 'due_for_service' | 'win_back'
-export type InvoiceStatus = 'sent' | 'overdue' | 'paid'
+export type InvoiceStatus = 'draft' | 'sent' | 'overdue' | 'paid'
 export type JobStatus = 'quote' | 'scheduled' | 'in_progress' | 'done'
 
 export interface Customer {

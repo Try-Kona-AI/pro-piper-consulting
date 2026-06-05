@@ -123,6 +123,7 @@ export function Button({
 }
 
 const invoiceColors: Record<InvoiceStatus, string> = {
+  draft: 'bg-slate-100 text-slate-500 ring-slate-200',
   sent: 'bg-blue-50 text-blue-700 ring-blue-200',
   overdue: 'bg-red-50 text-red-700 ring-red-200',
   paid: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
@@ -142,6 +143,7 @@ const jobColors: Record<JobStatus, string> = {
 }
 
 const labels: Record<string, string> = {
+  draft: 'Draft',
   sent: 'Sent',
   overdue: 'Overdue',
   paid: 'Paid',
