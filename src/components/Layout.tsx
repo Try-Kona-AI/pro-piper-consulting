@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { supabase } from '../lib/supabase'
 
 const nav = [
   { to: '/',          label: 'Dashboard',    end: true },
@@ -45,7 +46,7 @@ function BottomNavItem({ to, label }: { to: string; label: string }) {
   )
 }
 
-function Logo() {
+function Logo({ businessName }: { businessName: string }) {
   return (
     <div className="flex items-center gap-2.5 px-5 py-5">
       <svg width="32" height="32" viewBox="0 0 34 34" fill="none">
@@ -55,24 +56,36 @@ function Logo() {
         <defs><linearGradient id="sl" x1="1" y1="1" x2="33" y2="33" gradientUnits="userSpaceOnUse"><stop stopColor="#0a86e6"/><stop offset="1" stopColor="#005aa6"/></linearGradient></defs>
       </svg>
       <div className="leading-tight">
-        <div className="text-sm font-semibold text-white">Pro Piper Consulting</div>
-        <div className="text-[11px] text-slate-400">Business Consulting · New York, NY</div>
+        <div className="text-sm font-semibold text-white">{businessName}</div>
+        <div className="text-[11px] text-slate-400">Powered by Kona AI</div>
       </div>
     </div>
   )
 }
 
 export default function Layout() {
-  const { user, signOut } = useAuth()
-  const [open, setOpen]   = useState(false)
-  const location          = useLocation()
+  const { user, signOut, tenantId } = useAuth()
+  const [open, setOpen]             = useState(false)
+  const [businessName, setBusinessName] = useState('')
+  const location                    = useLocation()
 
   // Close drawer on every navigation
   useEffect(() => { setOpen(false) }, [location.pathname])
 
+  // Fetch business name from tenants table
+  useEffect(() => {
+    if (!tenantId) return
+    void supabase
+      .from('tenants')
+      .select('name')
+      .eq('id', tenantId)
+      .single()
+      .then(({ data }) => { if (data?.name) setBusinessName(data.name) })
+  }, [tenantId])
+
   const sidebar = (
     <>
-      <Logo />
+      <Logo businessName={businessName} />
 
       <nav className="flex flex-col gap-1 px-3">
         {nav.map(n => <NavItem key={n.to} {...n} />)}
@@ -123,7 +136,7 @@ export default function Layout() {
           <circle cx="23.6" cy="11" r="1.9" fill="#f5b91e"/>
           <defs><linearGradient id="sl2" x1="1" y1="1" x2="33" y2="33" gradientUnits="userSpaceOnUse"><stop stopColor="#0a86e6"/><stop offset="1" stopColor="#005aa6"/></linearGradient></defs>
         </svg>
-        <span className="text-sm font-semibold text-white">Pro Piper Consulting</span>
+        <span className="text-sm font-semibold text-white">{businessName}</span>
       </header>
 
       {/* ── Drawer backdrop (mobile only) ──────────────────── */}

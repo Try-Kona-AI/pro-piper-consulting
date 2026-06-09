@@ -19,14 +19,15 @@ function Kpi({ label, value, sub, tone = 'default' }: { label: string; value: st
 }
 
 export default function Dashboard() {
-  const { tenantId } = useAuth()
+  const { tenantId, loading: authLoading } = useAuth()
   const [invoices, setInvoices]   = useState<Invoice[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState<string | null>(null)
 
   useEffect(() => {
-    if (!tenantId) return
+    if (authLoading) return
+    if (!tenantId) { setLoading(false); return }
     void (async () => {
       const [inv, cust] = await Promise.all([
         supabase.from('invoices').select('*, customer:customers(id,name,phone,email)').eq('tenant_id', tenantId),

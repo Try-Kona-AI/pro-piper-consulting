@@ -17,7 +17,9 @@ async function fetchTenantId(userId: string): Promise<string | null> {
     .from('tenants')
     .select('id')
     .eq('owner_user_id', userId)
-    .single()
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
   return data?.id ?? null
 }
 

@@ -21,6 +21,7 @@ export default function CustomerModal({ onClose, onSaved, customer }: Props) {
   const [email, setEmail]             = useState(customer?.email ?? '')
   const [address, setAddress]         = useState(customer?.address ?? '')
   const [status, setStatus]           = useState<Customer['status']>(customer?.status ?? 'active')
+  const [lastServiceDate, setLastServiceDate] = useState(customer?.last_service_date ?? '')
   const [notes, setNotes]             = useState(customer?.notes ?? '')
 
   async function submit(e: React.FormEvent) {
@@ -29,7 +30,7 @@ export default function CustomerModal({ onClose, onSaved, customer }: Props) {
     setSaving(true)
     setError(null)
 
-    const payload = { name, contact_name: contactName, phone, email, address, status, notes, tenant_id: tenantId }
+    const payload = { name, contact_name: contactName, phone, email, address, status, last_service_date: lastServiceDate || null, notes, tenant_id: tenantId }
 
     let err
     if (customer) {
@@ -59,7 +60,10 @@ export default function CustomerModal({ onClose, onSaved, customer }: Props) {
             <option value="win_back">Win-back</option>
           </SelectField>
         </div>
-        <TextField label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="100 Church St, New York, NY 10007" />
+        <div className="grid grid-cols-2 gap-3">
+          <TextField label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="100 Church St, New York, NY 10007" />
+          <TextField label="Last service date" type="date" value={lastServiceDate} onChange={e => setLastServiceDate(e.target.value)} />
+        </div>
         <TextAreaField label="Notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any context about this customer…" />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <FormActions onCancel={onClose} saving={saving} label={customer ? 'Save changes' : 'Add customer'} />

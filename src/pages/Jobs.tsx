@@ -60,13 +60,6 @@ export default function Jobs() {
     }
   }
 
-  async function startWork(j: Job) {
-    setAdvancing(j.id)
-    await supabase.from('jobs').update({ status: 'in_progress' }).eq('id', j.id)
-    await load()
-    setAdvancing(null)
-  }
-
   async function completeJob(j: Job) {
     setAdvancing(j.id)
     try {
@@ -83,6 +76,7 @@ export default function Jobs() {
         .insert({
           tenant_id:   tenantId,
           customer_id: j.customer_id,
+          job_id:      j.id,
           number,
           description: j.description ? `${j.title} — ${j.description}` : j.title,
           amount:      Number(j.amount),
@@ -162,22 +156,13 @@ export default function Jobs() {
                           {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
                         </Button>
                   )}
-                  {j.status === 'scheduled' && (
-                    <Button
-                      size="sm" variant="secondary"
-                      onClick={() => void startWork(j)}
-                      disabled={advancing === j.id}
-                    >
-                      {advancing === j.id ? 'Updating…' : '→ Start work'}
-                    </Button>
-                  )}
-                  {j.status === 'in_progress' && (
+                  {(j.status === 'scheduled' || j.status === 'in_progress') && (
                     <Button
                       size="sm"
                       onClick={() => void completeJob(j)}
                       disabled={advancing === j.id}
                     >
-                      {advancing === j.id ? 'Creating…' : 'Done → Invoice'}
+                      {advancing === j.id ? 'Creating…' : 'Mark complete → Invoice'}
                     </Button>
                   )}
                   {j.status === 'done' && (

@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
     ]);
 
     const businessName = tenant?.name ?? settings?.mailing_name ?? "Pro Piper Consulting";
-    const fromAddress = `${businessName} <onboarding@resend.dev>`;
+    const fromAddress = `${businessName} <hello@trykona.ai>`;
 
     let subject = "", html = "", toEmail = "";
 
