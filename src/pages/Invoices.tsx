@@ -48,12 +48,19 @@ export default function Invoices() {
     setEmailStatus(s => ({ ...s, [inv.id]: 'sending' }))
     const result = await sendEmail({ type: 'invoice_receipt', tenantId: tenantId!, invoiceId: inv.id })
     if (result.ok) {
-      await supabase.from('invoices').update({ status: 'sent', sent_date: today() }).eq('id', inv.id)
       setEmailStatus(s => ({ ...s, [inv.id]: 'sent' }))
     } else {
       setEmailStatus(s => ({ ...s, [inv.id]: 'error' }))
-      alert(`Email failed: ${result.error}`)
     }
+    // Always advance to sent regardless of email outcome
+    await supabase.from('invoices').update({ status: 'sent', sent_date: today() }).eq('id', inv.id)
+    await load()
+    setBusy(null)
+  }
+
+  async function markSent(inv: Invoice) {
+    setBusy(inv.id)
+    await supabase.from('invoices').update({ status: 'sent', sent_date: today() }).eq('id', inv.id)
     await load()
     setBusy(null)
   }
@@ -136,13 +143,22 @@ export default function Invoices() {
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1.5">
                         {inv.status === 'draft' && (
-                          <Button
-                            size="sm"
-                            onClick={() => void sendInvoice(inv)}
-                            disabled={busy === inv.id || emailStatus[inv.id] === 'sending' || !inv.customer?.email}
-                          >
-                            {emailStatus[inv.id] === 'sending' ? 'Sending…' : emailStatus[inv.id] === 'sent' ? '✓ Sent' : 'Send invoice'}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => void sendInvoice(inv)}
+                              disabled={busy === inv.id || emailStatus[inv.id] === 'sending'}
+                            >
+                              {emailStatus[inv.id] === 'sending' ? 'Sending…' : emailStatus[inv.id] === 'sent' ? '✓ Sent' : 'Send invoice'}
+                            </Button>
+                            <Button
+                              size="sm" variant="secondary"
+                              onClick={() => void markSent(inv)}
+                              disabled={busy === inv.id}
+                            >
+                              Mark sent
+                            </Button>
+                          </>
                         )}
                         {(inv.status === 'sent' || inv.status === 'overdue') && (
                           <>
