@@ -35,7 +35,10 @@ export default function Invoices() {
 
   async function markPaid(inv: Invoice) {
     setBusy(inv.id)
-    await supabase.from('invoices').update({ status: 'paid', paid_date: today() }).eq('id', inv.id)
+    await Promise.all([
+      supabase.from('invoices').update({ status: 'paid', paid_date: today() }).eq('id', inv.id),
+      supabase.from('customers').update({ status: 'active', last_service_date: today() }).eq('id', inv.customer_id),
+    ])
     await load()
     setBusy(null)
   }

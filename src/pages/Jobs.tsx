@@ -7,14 +7,31 @@ import { Card, Badge, Button, PageHeader, Loading, ErrorNote, EmptyState } from 
 import JobModal from '../components/JobModal'
 import { sendEmail } from '../lib/email'
 
+const defaultDue = () => new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)
+const todayStr   = () => new Date().toISOString().slice(0, 10)
+
+async function nextInvoiceNumber(tenantId: string): Promise<string> {
+  const { data } = await supabase
+    .from('invoices')
+    .select('number')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  if (!data?.length) return 'INV-1100'
+  const n = parseInt(data[0].number.replace('INV-', ''), 10)
+  return isNaN(n) ? 'INV-1100' : `INV-${n + 1}`
+}
+
 export default function Jobs() {
   const { tenantId } = useAuth()
   const [jobs, setJobs]       = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
   const [modal, setModal]     = useState<'new' | Job | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleting, setDeleting]   = useState<string | null>(null)
+  const [advancing, setAdvancing] = useState<string | null>(null)
   const [quoteStatus, setQuoteStatus] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
+  const [invoicedJobs, setInvoicedJobs] = useState<Set<string>>(new Set())
 
   async function load() {
     if (!tenantId) return
@@ -34,8 +51,55 @@ export default function Jobs() {
   async function sendQuote(j: Job) {
     setQuoteStatus(s => ({ ...s, [j.id]: 'sending' }))
     const result = await sendEmail({ type: 'quote', tenantId: tenantId!, jobId: j.id })
-    setQuoteStatus(s => ({ ...s, [j.id]: result.ok ? 'sent' : 'error' }))
-    if (!result.ok) alert(`Email failed: ${result.error}`)
+    if (result.ok) {
+      await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', j.id)
+      await load()
+    } else {
+      setQuoteStatus(s => ({ ...s, [j.id]: 'error' }))
+      alert(`Email failed: ${result.error}`)
+    }
+  }
+
+  async function startWork(j: Job) {
+    setAdvancing(j.id)
+    await supabase.from('jobs').update({ status: 'in_progress' }).eq('id', j.id)
+    await load()
+    setAdvancing(null)
+  }
+
+  async function completeJob(j: Job) {
+    setAdvancing(j.id)
+    try {
+      const number = await nextInvoiceNumber(tenantId!)
+
+      const { error: jobErr } = await supabase
+        .from('jobs')
+        .update({ status: 'done' })
+        .eq('id', j.id)
+      if (jobErr) throw new Error(`Job update failed: ${jobErr.message}`)
+
+      const { data: invData, error: invErr } = await supabase
+        .from('invoices')
+        .insert({
+          tenant_id:   tenantId,
+          customer_id: j.customer_id,
+          number,
+          description: j.description ? `${j.title} — ${j.description}` : j.title,
+          amount:      Number(j.amount),
+          status:      'draft',
+          due_date:    defaultDue(),
+          sent_date:   todayStr(),
+        })
+        .select()
+      if (invErr) throw new Error(`Invoice creation failed: ${invErr.message}`)
+      if (!invData?.length) throw new Error('Invoice insert returned no data — check Supabase logs')
+
+      setInvoicedJobs(s => new Set(s).add(j.id))
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    }
+    setAdvancing(null)
   }
 
   async function deleteJob(j: Job) {
@@ -97,6 +161,29 @@ export default function Jobs() {
                         >
                           {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
                         </Button>
+                  )}
+                  {j.status === 'scheduled' && (
+                    <Button
+                      size="sm" variant="secondary"
+                      onClick={() => void startWork(j)}
+                      disabled={advancing === j.id}
+                    >
+                      {advancing === j.id ? 'Updating…' : '→ Start work'}
+                    </Button>
+                  )}
+                  {j.status === 'in_progress' && (
+                    <Button
+                      size="sm"
+                      onClick={() => void completeJob(j)}
+                      disabled={advancing === j.id}
+                    >
+                      {advancing === j.id ? 'Creating…' : 'Done → Invoice'}
+                    </Button>
+                  )}
+                  {j.status === 'done' && (
+                    invoicedJobs.has(j.id)
+                      ? <span className="text-xs font-medium text-emerald-600">Invoice drafted ✓</span>
+                      : <span className="text-xs text-slate-400">Complete</span>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setModal(j)}>Edit</Button>
                   <button
