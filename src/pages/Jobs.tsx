@@ -32,6 +32,7 @@ export default function Jobs() {
   const [advancing, setAdvancing] = useState<string | null>(null)
   const [quoteStatus, setQuoteStatus] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
   const [invoicedJobs, setInvoicedJobs] = useState<Set<string>>(new Set())
+  const [showCompleted, setShowCompleted] = useState(false)
 
   async function load() {
     if (!tenantId) return
@@ -115,8 +116,61 @@ export default function Jobs() {
   if (loading) return <Loading />
   if (error)   return <ErrorNote message={error} />
 
-  const openQuotes  = jobs.filter(j => j.status === 'quote')
-  const quoteValue  = openQuotes.reduce((s, j) => s + Number(j.amount), 0)
+  const activeJobs    = jobs.filter(j => j.status !== 'done')
+  const completedJobs = jobs.filter(j => j.status === 'done')
+  const openQuotes    = jobs.filter(j => j.status === 'quote')
+  const quoteValue    = openQuotes.reduce((s, j) => s + Number(j.amount), 0)
+
+  const JobCard = ({ j }: { j: Job }) => (
+    <Card key={j.id} className="p-5">
+      <div className="flex items-start justify-between">
+        <div className="pr-3">
+          <div className="font-medium text-slate-800">{j.title}</div>
+          <div className="text-xs text-slate-400">{j.customer?.name}</div>
+        </div>
+        <Badge status={j.status} kind="job" />
+      </div>
+      {j.description && <p className="mt-2 text-sm text-slate-600">{j.description}</p>}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <span className="text-lg font-semibold text-slate-800">{money(j.amount)}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {j.scheduled_date && (
+            <span className="text-xs text-slate-500">Scheduled {shortDate(j.scheduled_date)}</span>
+          )}
+          {j.status === 'quote' && (
+            quoteStatus[j.id] === 'sent'
+              ? <span className="text-xs font-medium text-emerald-600">Quote sent ✓</span>
+              : <>
+                  <Button size="sm" variant="secondary" onClick={() => void sendQuote(j)} disabled={quoteStatus[j.id] === 'sending'}>
+                    {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => void scheduleJob(j)} disabled={advancing === j.id}>
+                    Mark scheduled
+                  </Button>
+                </>
+          )}
+          {(j.status === 'scheduled' || j.status === 'in_progress') && (
+            <Button size="sm" onClick={() => void completeJob(j)} disabled={advancing === j.id}>
+              {advancing === j.id ? 'Creating…' : 'Mark complete → Invoice'}
+            </Button>
+          )}
+          {j.status === 'done' && (
+            invoicedJobs.has(j.id)
+              ? <span className="text-xs font-medium text-emerald-600">Invoice drafted ✓</span>
+              : <span className="text-xs text-slate-400">Invoiced</span>
+          )}
+          <Button size="sm" variant="secondary" onClick={() => setModal(j)}>Edit</Button>
+          <button
+            onClick={() => void deleteJob(j)}
+            disabled={deleting === j.id}
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1.75a.25.25 0 0 1 .25-.25h2.5a.25.25 0 0 1 .25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.748 1.748 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15z"/></svg>
+          </button>
+        </div>
+      </div>
+    </Card>
+  )
 
   return (
     <>
@@ -133,72 +187,36 @@ export default function Jobs() {
         </div>
       )}
 
-      {jobs.length === 0 ? (
+      {activeJobs.length === 0 && completedJobs.length === 0 ? (
         <Card><EmptyState message="No jobs or quotes yet." /></Card>
+      ) : activeJobs.length === 0 ? (
+        <Card><EmptyState message="No active jobs — all work is complete." /></Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {jobs.map((j) => (
-            <Card key={j.id} className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="pr-3">
-                  <div className="font-medium text-slate-800">{j.title}</div>
-                  <div className="text-xs text-slate-400">{j.customer?.name}</div>
-                </div>
-                <Badge status={j.status} kind="job" />
-              </div>
-              {j.description && <p className="mt-2 text-sm text-slate-600">{j.description}</p>}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                <span className="text-lg font-semibold text-slate-800">{money(j.amount)}</span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {j.scheduled_date && (
-                    <span className="text-xs text-slate-500">Scheduled {shortDate(j.scheduled_date)}</span>
-                  )}
-                  {j.status === 'quote' && (
-                    quoteStatus[j.id] === 'sent'
-                      ? <span className="text-xs font-medium text-emerald-600">Quote sent ✓</span>
-                      : <>
-                          <Button
-                            size="sm" variant="secondary"
-                            onClick={() => void sendQuote(j)}
-                            disabled={quoteStatus[j.id] === 'sending'}
-                          >
-                            {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
-                          </Button>
-                          <Button
-                            size="sm" variant="secondary"
-                            onClick={() => void scheduleJob(j)}
-                            disabled={advancing === j.id}
-                          >
-                            Mark scheduled
-                          </Button>
-                        </>
-                  )}
-                  {(j.status === 'scheduled' || j.status === 'in_progress') && (
-                    <Button
-                      size="sm"
-                      onClick={() => void completeJob(j)}
-                      disabled={advancing === j.id}
-                    >
-                      {advancing === j.id ? 'Creating…' : 'Mark complete → Invoice'}
-                    </Button>
-                  )}
-                  {j.status === 'done' && (
-                    invoicedJobs.has(j.id)
-                      ? <span className="text-xs font-medium text-emerald-600">Invoice drafted ✓</span>
-                      : <span className="text-xs text-slate-400">Complete</span>
-                  )}
-                  <Button size="sm" variant="secondary" onClick={() => setModal(j)}>Edit</Button>
-                  <button
-                    onClick={() => void deleteJob(j)}
-                    disabled={deleting === j.id}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1.75a.25.25 0 0 1 .25-.25h2.5a.25.25 0 0 1 .25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.748 1.748 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15z"/></svg>
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
+          {activeJobs.map(j => <JobCard key={j.id} j={j} />)}
+        </div>
+      )}
+
+      {completedJobs.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowCompleted(v => !v)}
+            className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
+          >
+            <svg
+              width="14" height="14" viewBox="0 0 16 16" fill="currentColor"
+              className={`transition-transform duration-200 ${showCompleted ? 'rotate-90' : ''}`}
+            >
+              <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z"/>
+            </svg>
+            Completed ({completedJobs.length})
+          </button>
+
+          {showCompleted && (
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {completedJobs.map(j => <JobCard key={j.id} j={j} />)}
+            </div>
+          )}
         </div>
       )}
 
