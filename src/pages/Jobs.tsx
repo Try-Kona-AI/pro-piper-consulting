@@ -52,12 +52,20 @@ export default function Jobs() {
     setQuoteStatus(s => ({ ...s, [j.id]: 'sending' }))
     const result = await sendEmail({ type: 'quote', tenantId: tenantId!, jobId: j.id })
     if (result.ok) {
-      await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', j.id)
-      await load()
+      setQuoteStatus(s => ({ ...s, [j.id]: 'sent' }))
     } else {
       setQuoteStatus(s => ({ ...s, [j.id]: 'error' }))
-      alert(`Email failed: ${result.error}`)
     }
+    // Always advance to scheduled regardless of email outcome
+    await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', j.id)
+    await load()
+  }
+
+  async function scheduleJob(j: Job) {
+    setAdvancing(j.id)
+    await supabase.from('jobs').update({ status: 'scheduled' }).eq('id', j.id)
+    await load()
+    setAdvancing(null)
   }
 
   async function completeJob(j: Job) {
@@ -148,13 +156,22 @@ export default function Jobs() {
                   {j.status === 'quote' && (
                     quoteStatus[j.id] === 'sent'
                       ? <span className="text-xs font-medium text-emerald-600">Quote sent ✓</span>
-                      : <Button
-                          size="sm" variant="secondary"
-                          onClick={() => void sendQuote(j)}
-                          disabled={quoteStatus[j.id] === 'sending'}
-                        >
-                          {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
-                        </Button>
+                      : <>
+                          <Button
+                            size="sm" variant="secondary"
+                            onClick={() => void sendQuote(j)}
+                            disabled={quoteStatus[j.id] === 'sending'}
+                          >
+                            {quoteStatus[j.id] === 'sending' ? 'Sending…' : 'Send quote'}
+                          </Button>
+                          <Button
+                            size="sm" variant="secondary"
+                            onClick={() => void scheduleJob(j)}
+                            disabled={advancing === j.id}
+                          >
+                            Mark scheduled
+                          </Button>
+                        </>
                   )}
                   {(j.status === 'scheduled' || j.status === 'in_progress') && (
                     <Button
