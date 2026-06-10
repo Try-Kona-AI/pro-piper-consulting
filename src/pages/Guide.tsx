@@ -140,9 +140,9 @@ export default function Guide() {
         <Card className="p-6 bg-[#0c2340]">
           <p className="text-sm font-medium text-white">Need help?</p>
           <p className="mt-1 text-sm text-slate-300">
-            Email your Karna advisor at{' '}
-            <a href="mailto:team@cymbul.co" className="text-blue-300 underline underline-offset-2">
-              team@cymbul.co
+            Email your Kona AI advisor at{' '}
+            <a href="mailto:mike@trykona.ai" className="text-blue-300 underline underline-offset-2">
+              mike@trykona.ai
             </a>{' '}
             and we'll get back to you within one business day.
           </p>
