@@ -4,6 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const APP_URL = Deno.env.get("APP_URL") ?? "https://propiper-app.vercel.app";
 const db = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
 function money(n: number) {
@@ -44,17 +45,30 @@ function wrap(content: string, businessName: string) {
 </html>`;
 }
 
-function paymentBlock(s: Record<string, string> | null) {
+function paymentBlock(s: Record<string, string> | null, invoiceId?: string) {
+  const stripeButton = s?.stripe_secret_key && invoiceId
+    ? `<div style="text-align:center;margin-bottom:24px;">
+  <a href="${APP_URL}/pay/${invoiceId}" style="display:inline-block;background:#0c2340;color:#ffffff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">Pay by Card →</a>
+  <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">Secure payment powered by Stripe</p>
+</div>`
+    : "";
+
   const rows: string[] = [];
   if (s?.zelle_contact) rows.push(`<tr><td style="padding:10px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:13px;color:#64748b;display:block;margin-bottom:2px;">Zelle</span><span style="font-size:14px;color:#1e293b;font-weight:500;">${s.zelle_contact}</span></td></tr>`);
   if (s?.bank_name && s?.bank_routing && s?.bank_account) rows.push(`<tr><td style="padding:10px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:13px;color:#64748b;display:block;margin-bottom:2px;">ACH / Wire — ${s.bank_name}</span><span style="font-size:14px;color:#1e293b;font-weight:500;">Routing: ${s.bank_routing} &nbsp;&middot;&nbsp; Account: ${s.bank_account}</span></td></tr>`);
   if (s?.mailing_name && s?.mailing_address) rows.push(`<tr><td style="padding:10px 0;"><span style="font-size:13px;color:#64748b;display:block;margin-bottom:2px;">Check by mail — payable to ${s.mailing_name}</span><span style="font-size:14px;color:#1e293b;font-weight:500;">${s.mailing_address.replace(/\n/g, " &middot; ")}</span></td></tr>`);
-  if (!rows.length) return "";
-  return `<div style="margin-top:28px;padding:20px 24px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+
+  if (!stripeButton && !rows.length) return "";
+
+  const howToPayBlock = rows.length
+    ? `<div style="margin-top:28px;padding:20px 24px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
     <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">How to Pay</p>
     <table width="100%" cellpadding="0" cellspacing="0">${rows.join("")}</table>
     ${s?.contact_phone ? `<p style="margin:12px 0 0;font-size:13px;color:#94a3b8;">Questions? Call or text ${s.contact_phone}</p>` : ""}
-  </div>`;
+  </div>`
+    : "";
+
+  return `${stripeButton}${howToPayBlock}`;
 }
 
 function invoiceBox(inv: Record<string, unknown>, isOverdue = false) {
@@ -74,7 +88,9 @@ function invoiceReminderTemplate(
   businessName: string,
 ) {
   const isOverdue = inv.status === "overdue";
-  const firstName = ((customer.name as string) ?? "there").split(" ")[0];
+  const raw = (customer.name as string) ?? "there";
+  const first = raw.split(" ")[0];
+  const firstName = first.endsWith(".") ? raw : first;
   return {
     subject: `${isOverdue ? "⚠️ Overdue" : "Reminder"}: Invoice ${inv.number} from ${businessName} – ${money(inv.amount as number)}`,
     html: wrap(`
@@ -87,7 +103,7 @@ function invoiceReminderTemplate(
           : `This is a friendly reminder that invoice <strong>${inv.number}</strong> for <strong>${money(inv.amount as number)}</strong> is due on <strong>${shortDate(inv.due_date as string)}</strong>.`}
       </p>
       ${invoiceBox(inv, isOverdue)}
-      ${paymentBlock(settings)}
+      ${paymentBlock(settings, inv.id as string)}
       <p style="margin:24px 0 0;font-size:14px;color:#94a3b8;line-height:1.7;">Thank you for your business.<br><strong style="color:#475569;">${businessName}</strong></p>
     `, businessName),
   };
@@ -100,7 +116,9 @@ function invoiceReceiptTemplate(
   settings: Record<string, string> | null,
   businessName: string,
 ) {
-  const firstName = ((customer.name as string) ?? "there").split(" ")[0];
+  const raw = (customer.name as string) ?? "there";
+  const first = raw.split(" ")[0];
+  const firstName = first.endsWith(".") ? raw : first;
   return {
     subject: `Your invoice from ${businessName} – ${money(inv.amount as number)}`,
     html: wrap(`
@@ -111,7 +129,7 @@ function invoiceReceiptTemplate(
         Thanks for choosing ${businessName}. Please find your invoice below. Reach out anytime if you have questions about the work.
       </p>
       ${invoiceBox(inv)}
-      ${paymentBlock(settings)}
+      ${paymentBlock(settings, inv.id as string)}
       <p style="margin:24px 0 0;font-size:14px;color:#94a3b8;line-height:1.7;">We look forward to working with you again.<br><strong style="color:#475569;">${businessName}</strong></p>
     `, businessName),
   };
@@ -123,7 +141,9 @@ function winBackTemplate(
   settings: Record<string, string> | null,
   businessName: string,
 ) {
-  const firstName = ((customer.name as string) ?? "there").split(" ")[0];
+  const raw = (customer.name as string) ?? "there";
+  const first = raw.split(" ")[0];
+  const firstName = first.endsWith(".") ? raw : first;
   const isWinBack = customer.status === "win_back";
   return {
     subject: isWinBack
@@ -157,7 +177,9 @@ function quoteTemplate(
   settings: Record<string, string> | null,
   businessName: string,
 ) {
-  const firstName = ((customer.name as string) ?? "there").split(" ")[0];
+  const raw = (customer.name as string) ?? "there";
+  const first = raw.split(" ")[0];
+  const firstName = first.endsWith(".") ? raw : first;
   return {
     subject: `Your quote from ${businessName} – ${money(job.amount as number)}`,
     html: wrap(`
@@ -189,7 +211,9 @@ function followUpTemplate(
   businessName: string,
   day: number,
 ) {
-  const firstName = ((customer.name as string) ?? "there").split(" ")[0];
+  const raw = (customer.name as string) ?? "there";
+  const first = raw.split(" ")[0];
+  const firstName = first.endsWith(".") ? raw : first;
   const isUrgent = day >= 14;
   const tone =
     day <= 3
@@ -207,7 +231,7 @@ function followUpTemplate(
       <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">Hi ${firstName},</p>
       <p style="margin:0 0 28px;font-size:15px;color:#334155;line-height:1.7;">${tone}</p>
       ${invoiceBox(inv, true)}
-      ${paymentBlock(settings)}
+      ${paymentBlock(settings, inv.id as string)}
       <p style="margin:24px 0 0;font-size:14px;color:#94a3b8;line-height:1.7;">${businessName}${settings?.contact_phone ? ` &middot; ${settings.contact_phone}` : ""}</p>
     `, businessName),
   };

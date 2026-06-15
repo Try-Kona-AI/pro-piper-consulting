@@ -9,11 +9,16 @@ import Winback from './pages/Winback'
 import Jobs from './pages/Jobs'
 import Settings from './pages/Settings'
 import Guide from './pages/Guide'
+import Pay from './pages/Pay'
+import PaySuccess from './pages/PaySuccess'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      {/* Public payment routes — no auth required */}
+      <Route path="/pay/:invoiceId" element={<Pay />} />
+      <Route path="/pay/success" element={<PaySuccess />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="invoices"  element={<Invoices />} />

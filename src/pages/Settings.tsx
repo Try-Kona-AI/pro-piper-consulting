@@ -17,6 +17,8 @@ const EMPTY: Draft = {
   mailing_address: '',
   contact_phone: '',
   other_instructions: '',
+  stripe_secret_key: '',
+  stripe_webhook_secret: '',
 }
 
 function PaymentPreview({ d }: { d: Draft }) {
@@ -101,14 +103,16 @@ export default function Settings() {
       if (error) { setError(error.message); setLoading(false); return }
       if (data) {
         setDraft({
-          zelle_contact:      data.zelle_contact      ?? '',
-          bank_name:          data.bank_name          ?? '',
-          bank_routing:       data.bank_routing       ?? '',
-          bank_account:       data.bank_account       ?? '',
-          mailing_name:       data.mailing_name       ?? '',
-          mailing_address:    data.mailing_address    ?? '',
-          contact_phone:      data.contact_phone      ?? '',
-          other_instructions: data.other_instructions ?? '',
+          zelle_contact:        data.zelle_contact        ?? '',
+          bank_name:            data.bank_name            ?? '',
+          bank_routing:         data.bank_routing         ?? '',
+          bank_account:         data.bank_account         ?? '',
+          mailing_name:         data.mailing_name         ?? '',
+          mailing_address:      data.mailing_address      ?? '',
+          contact_phone:        data.contact_phone        ?? '',
+          other_instructions:   data.other_instructions   ?? '',
+          stripe_secret_key:    data.stripe_secret_key    ?? '',
+          stripe_webhook_secret: data.stripe_webhook_secret ?? '',
         })
       }
       setLoading(false)
@@ -129,15 +133,17 @@ export default function Settings() {
 
     const payload = {
       tenant_id: tenantId,
-      zelle_contact:      draft.zelle_contact      || null,
-      bank_name:          draft.bank_name          || null,
-      bank_routing:       draft.bank_routing       || null,
-      bank_account:       draft.bank_account       || null,
-      mailing_name:       draft.mailing_name       || null,
-      mailing_address:    draft.mailing_address    || null,
-      contact_phone:      draft.contact_phone      || null,
-      other_instructions: draft.other_instructions || null,
-      updated_at:         new Date().toISOString(),
+      zelle_contact:        draft.zelle_contact        || null,
+      bank_name:            draft.bank_name            || null,
+      bank_routing:         draft.bank_routing         || null,
+      bank_account:         draft.bank_account         || null,
+      mailing_name:         draft.mailing_name         || null,
+      mailing_address:      draft.mailing_address      || null,
+      contact_phone:        draft.contact_phone        || null,
+      other_instructions:   draft.other_instructions   || null,
+      stripe_secret_key:    draft.stripe_secret_key    || null,
+      stripe_webhook_secret: draft.stripe_webhook_secret || null,
+      updated_at:           new Date().toISOString(),
     }
 
     const { error } = await supabase
@@ -228,6 +234,33 @@ export default function Settings() {
               placeholder="Please include your invoice number in the memo."
               value={draft.other_instructions ?? ''}
               onChange={set('other_instructions')}
+            />
+          </Card>
+
+          {/* Stripe (Optional) */}
+          <Card className="p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Stripe (Optional)</h2>
+              <p className="mt-1 text-xs text-slate-400">
+                Adds a "Pay by Card" button to invoice emails. Get your keys at{' '}
+                <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noreferrer" className="underline">
+                  dashboard.stripe.com
+                </a>
+              </p>
+            </div>
+            <TextField
+              label="Stripe Secret Key"
+              type="password"
+              placeholder="sk_live_…"
+              value={draft.stripe_secret_key ?? ''}
+              onChange={set('stripe_secret_key')}
+            />
+            <TextField
+              label="Stripe Webhook Secret"
+              type="password"
+              placeholder="whsec_…"
+              value={draft.stripe_webhook_secret ?? ''}
+              onChange={set('stripe_webhook_secret')}
             />
           </Card>
 

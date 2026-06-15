@@ -56,5 +56,7 @@ export interface TenantSettings {
   mailing_address: string | null
   contact_phone: string | null
   other_instructions: string | null
+  stripe_secret_key: string | null
+  stripe_webhook_secret: string | null
   updated_at: string
 }
